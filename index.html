@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AppStore Pro - Digital Store & Wallet</title>
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      line-height: 1.6;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      padding-bottom: 60px;
+    }
+
+    #particles-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Header & Navigation */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand h1 {
+      font-size: 20px;
+      color: #38bdf8;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .brand p { font-size: 11px; color: #94a3b8; }
+
+    /* Three-Dots Menu */
+    .menu-wrapper {
+      position: relative;
+    }
+
+    .three-dots-btn {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s all ease;
+    }
+
+    .three-dots-btn:hover {
+      background: #0284c7;
+      color: #fff;
+      border-color: #38bdf8;
+      transform: scale(1.05);
+    }
+
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50px;
+      width: 270px;
+      background: rgba(17, 24, 39, 0.96);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      backdrop-filter: blur(16px);
+      border-radius: 14px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+      padding: 14px;
+      z-index: 150;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .menu-wallet-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .menu-wallet-card span { font-size: 12px; color: #94a3b8; }
+    .menu-wallet-card strong {
+      display: block;
+      font-size: 20px;
+      color: #38bdf8;
+      margin: 4px 0 10px 0;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: 0.2s all ease;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .menu-item:hover {
+      background: rgba(56, 189, 248, 0.12);
+      color: #38bdf8;
+    }
+
+    .menu-item.danger { color: #f87171; }
+    .menu-item.danger:hover { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+    .menu-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 8px 0;
+    }
+
+    /* Buttons */
+    .btn {
+      cursor: pointer;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      transition: 0.2s all ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary { background: #0284c7; color: #fff; }
+    .btn-primary:hover { background: #0369a1; box-shadow: 0 0 15px rgba(2, 132, 199, 0.5); }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-secondary { background: #334155; color: #e2e8f0; }
+
+    .btn-copy {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid #38bdf8;
+      color: #38bdf8;
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-copy:hover {
+      background: #0284c7;
+      color: #fff;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 25px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(12px);
+    }
+
+    h2 {
+      font-size: 18px;
+      color: #38bdf8;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+    }
+
+    p, ul {
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-top: 8px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    /* Auth Box */
+    #auth-card {
+      max-width: 420px;
+      margin: 60px auto;
+    }
+
+    .auth-toggle-link {
+      color: #38bdf8;
+      cursor: pointer;
+      font-size: 13px;
+      text-decoration: underline;
+      display: block;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+      padding: 11px 14px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    input:focus { outline: none; border-color: #38bdf8; }
+
+    /* App Store Grid */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .app-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: 0.25s all ease;
+    }
+
+    .app-card:hover {
+      transform: translateY(-4px);
+      border-color: #38bdf8;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .app-icon-box {
+      width: 65px;
+      height: 65px;
+      border-radius: 14px;
+      background: #0f172a;
+      overflow: hidden;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .app-icon-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .app-title { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 6px; }
+
+    .status-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .status-available { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .status-out { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+    .app-desc { font-size: 13px; color: #94a3b8; margin-bottom: 14px; flex-grow: 1; }
+
+    .app-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .app-price { font-size: 16px; font-weight: bold; color: #38bdf8; }
+
+    /* Purchased Items */
+    .purchased-item {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .purchased-item.expired-card {
+      background: rgba(239, 68, 68, 0.06);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .purchased-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .timer-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .timer-badge.expired {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Modals */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 13, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #111827 0%, #0d1321 100%);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 16px;
+      padding: 26px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.2);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #fff; }
+
+    .modal-header h3 {
+      font-size: 19px;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+
+    /* Plan Selection Grid */
+    .plan-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: 0.2s all ease;
+    }
+
+    .plan-card:hover {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .plan-card.selected {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+
+    .plan-duration {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .plan-price-tag {
+      font-size: 16px;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+
+    .quick-amt-btns {
+      display: flex;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .quick-amt-btns button {
+      flex: 1;
+      padding: 9px 0;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .quick-amt-btns button:hover {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+
+    /* Credentials Detail Box in Modal */
+    .cred-row {
+      background: #090d16;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cred-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .cred-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #38bdf8;
+      word-break: break-all;
+    }
+
+    /* Toast */
+    #toast-notice {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #10b981;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      display: none;
+      z-index: 300;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    a.contact-link {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+    a.contact-link:hover {
+      text-decoration: underline;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: #64748b;
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+
+<header>
+  <div class="nav-container">
+    <div class="brand">
+      <h1>AppStore Pro</h1>
+      <p>Digital Application Hub &amp; Automated Wallet</p>
+    </div>
+
+    <!-- Right Controls: Three Dots Menu -->
+    <div class="menu-wrapper" id="user-menu-wrapper" style="display: none;">
+      <button class="three-dots-btn" onclick="toggleDropdownMenu()" title="Wallet & Menu">
+        &#8942;
+      </button>
+
+      <div class="dropdown-menu" id="dropdown-menu">
+        <div class="menu-wallet-card">
+          <span>Current Wallet Balance</span>
+          <strong id="menu-wallet-balance">&#8377;0.00</strong>
+          <button class="btn btn-primary" style="width: 100%;" onclick="openRechargeModal()">
+            + Add Funds / Recharge
+          </button>
+        </div>
+
+        <button class="menu-item" onclick="scrollToSection('apps-section')">
+          <span>&#128722;</span> Application Store
+        </button>
+        <button class="menu-item" onclick="scrollToSection('purchases-section')">
+          <span>&#128273;</span> My Apps &amp; Credentials
+        </button>
+        <button class="menu-item" onclick="openTransactionModal()">
+          <span>&#128203;</span> Recharge History
+        </button>
+
+        <div class="menu-divider"></div>
+
+        <!-- Policies & Terms Modals (Cleanly tucked inside 3-dots) -->
+        <button class="menu-item" onclick="openPolicyModal('about-modal')">
+          <span>&#128214;</span> About Us
+        </button>
+        <button class="menu-item" onclick="openPolicyModal('terms-modal')">
+          <span>&#128220;</span> Terms &amp; Conditions
+        </button>
+        <button class="menu-item" onclick="openPolicyModal('privacy-modal')">
+          <span>&#128274;</span> Privacy Policy
+        </button>
+        <button class="menu-item" onclick="openPolicyModal('refund-modal')">
+          <span>&#128260;</span> Refund Policy
+        </button>
+        <button class="menu-item" onclick="openPolicyModal('contact-modal')">
+          <span>&#9742;</span> Contact Support
+        </button>
+
+        <div class="menu-divider"></div>
+
+        <div style="padding: 6px 12px; font-size: 11px; color: #94a3b8;" id="menu-user-email">
+          user@example.com
+        </div>
+
+        <button class="menu-item danger" onclick="logoutUser()">
+          <span>&#128682;</span> Logout Account
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- AUTHENTICATION (Register & Login) -->
+  <div class="card" id="auth-card">
+    
+    <!-- Register Screen -->
+    <div id="register-box">
+      <h2>Create New Account</h2>
+      <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Full Name</label>
+      <input type="text" id="reg-name" placeholder="Your Name" />
+      <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Email Address</label>
+      <input type="email" id="reg-email" placeholder="name@example.com" />
+      <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Password</label>
+      <input type="password" id="reg-pass" placeholder="Create password" />
+      <button class="btn btn-success" style="width: 100%; padding: 11px;" onclick="handleRegister()">Register Account</button>
+      <span class="auth-toggle-link" onclick="showLoginView()">Already registered? Click here to Login</span>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-box" style="display: none;">
+      <h2>Sign In to Account</h2>
+      <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Email Address</label>
+      <input type="email" id="login-email" placeholder="name@example.com" />
+      <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">Password</label>
+      <input type="password" id="login-pass" placeholder="Enter your password" />
+      <button class="btn btn-primary" style="width: 100%; padding: 11px;" onclick="handleLogin()">Login to Dashboard</button>
+      <span class="auth-toggle-link" onclick="showRegisterView()">New user? Create an account first</span>
+    </div>
+
+  </div>
+
+  <!-- CLEAN MAIN DASHBOARD VIEW -->
+  <div id="dashboard-view" style="display: none;">
+    
+    <!-- App Store Grid -->
+    <div class="card" id="apps-section">
+      <h2>Featured Applications &amp; Utilities</h2>
+      <div class="app-grid" id="apps-container">
+        <p style="color: #94a3b8;">Loading software inventory...</p>
+      </div>
+    </div>
+
+    <!-- My Purchased Apps & Passwords with Countdown Timers -->
+    <div class="card" id="purchases-section">
+      <h2>My Purchased Apps &amp; Credentials</h2>
+      <div id="purchased-container">
+        <p style="color: #94a3b8; font-size: 13px;">You have not purchased any applications yet.</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- GENERAL CUSTOM SLEEK ALERT MODAL (Replaces browser alert) -->
+<div class="modal" id="custom-alert-modal">
+  <div class="modal-content" style="max-width: 420px; text-align: center;">
+    <button class="modal-close" onclick="closeCustomAlert()">&times;</button>
+    <div id="alert-icon" style="font-size: 38px; margin-bottom: 8px;">ℹ️</div>
+    <h3 id="alert-title" style="color: #38bdf8; font-size: 18px; margin-bottom: 6px;">Notification</h3>
+    <p id="alert-message" style="font-size: 13px; color: #cbd5e1; margin-bottom: 18px; line-height: 1.5;"></p>
+    <button class="btn btn-primary" style="width: 100%;" onclick="closeCustomAlert()">OK</button>
+  </div>
+</div>
+
+<!-- PLAN SELECTION MODAL -->
+<div class="modal" id="plan-selection-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closePlanModal()">&times;</button>
+    <div class="modal-header">
+      <h3 id="plan-app-title" style="color: #38bdf8;">Choose Duration &amp; Plan</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">Select how long you want to access this application:</p>
+    </div>
+
+    <div id="plan-list-container">
+      <p style="color: #94a3b8;">Loading plans...</p>
+    </div>
+
+    <div style="background: rgba(30, 41, 59, 0.5); padding: 12px; border-radius: 8px; margin: 14px 0; display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 13px; color: #94a3b8;">Selected Plan Price:</span>
+      <strong id="plan-selected-price" style="font-size: 18px; color: #38bdf8;">&#8377;0</strong>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+      <button class="btn btn-secondary" onclick="closePlanModal()">Cancel</button>
+      <button class="btn btn-success" id="btn-confirm-plan-buy" onclick="confirmPlanPurchase()">Confirm &amp; Unlock Key</button>
+    </div>
+  </div>
+</div>
+
+<!-- BEAUTIFUL CUSTOM INSUFFICIENT BALANCE DIALOG -->
+<div class="modal" id="insufficient-balance-modal">
+  <div class="modal-content" style="border-color: rgba(239, 68, 68, 0.4); max-width: 440px;">
+    <button class="modal-close" onclick="closeInsufficientModal()">&times;</button>
+    <div style="text-align: center; margin-bottom: 16px;">
+      <div style="font-size: 40px; margin-bottom: 8px;">⚠️</div>
+      <h3 style="color: #f87171; font-size: 19px; font-weight: 700;">Insufficient Wallet Balance</h3>
+      <p style="font-size: 13px; color: #94a3b8; margin-top: 6px;">You do not have enough funds in your wallet to complete this purchase.</p>
+    </div>
+
+    <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 13px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: #94a3b8;">Current Wallet Balance:</span>
+        <strong id="insufficient-wallet-val" style="color: #38bdf8;">₹0.00</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span style="color: #94a3b8;">Plan Price:</span>
+        <strong id="insufficient-plan-val" style="color: #f87171;">₹0.00</strong>
+      </div>
+      <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin: 8px 0;"></div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: #94a3b8;">Required Top-up:</span>
+        <strong id="insufficient-needed-val" style="color: #fbbf24;">₹0.00</strong>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-secondary" style="flex: 1;" onclick="closeInsufficientModal()">Cancel</button>
+      <button class="btn btn-primary" style="flex: 1;" onclick="goToRechargeFromInsufficient()">Recharge Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECHARGE MODAL -->
+<div class="modal" id="recharge-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeRechargeModal()">&times;</button>
+    <div class="modal-header">
+      <h3>Auto Wallet Recharge</h3>
+      <p style="font-size: 13px; color: #94a3b8;">Funds will instantly reflect in your wallet balance upon payment confirmation.</p>
+    </div>
+
+    <div class="quick-amt-btns">
+      <button onclick="setRechargeAmt(49)">&#8377;49</button>
+      <button onclick="setRechargeAmt(99)">&#8377;99</button>
+      <button onclick="setRechargeAmt(199)">&#8377;199</button>
+      <button onclick="setRechargeAmt(499)">&#8377;499</button>
+    </div>
+
+    <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom: 4px;">Custom Amount (&#8377;):</label>
+    <input type="number" id="recharge-amt-input" value="49" style="font-size: 16px; font-weight: 600;" />
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+      <button class="btn btn-secondary" onclick="closeRechargeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="startRazorpayPayment()">Proceed with Razorpay</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEDICATED POPUP: PURCHASED APP & CREDENTIALS POPUP WITH COUNTDOWN TIMER -->
+<div class="modal" id="credentials-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeCredentialsModal()">&times;</button>
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom: 8px;">
+        <span style="font-size:24px;">&#128273;</span>
+        <h3 id="modal-app-title" style="margin:0; font-size:18px; color:#38bdf8;">App Credentials</h3>
+      </div>
+      <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Here are your exclusive unlocked login credentials and download link:</p>
+      
+      <!-- Live Timer Badge in Modal -->
+      <div id="modal-timer-badge" class="timer-badge" style="margin-bottom: 12px;">
+        Calculating validity...
+      </div>
+    </div>
+
+    <!-- Dynamically Shown: Username Box -->
+    <div class="cred-row" id="modal-user-row">
+      <div>
+        <div class="cred-label">Application Username</div>
+        <div class="cred-value" id="modal-app-username">...</div>
+      </div>
+      <button class="btn-copy" id="btn-copy-user" onclick="copyModalField('modal-app-username')">Copy</button>
+    </div>
+
+    <!-- Dynamically Shown: Password Box -->
+    <div class="cred-row" id="modal-pass-row">
+      <div>
+        <div class="cred-label">Password / Activation Key</div>
+        <div class="cred-value" id="modal-app-password">...</div>
+      </div>
+      <button class="btn-copy" id="btn-copy-pass" onclick="copyModalField('modal-app-password')">Copy</button>
+    </div>
+
+    <div style="margin-top: 18px; display: flex; gap: 10px;">
+      <a id="modal-app-download" href="#" target="_blank" class="btn btn-success" style="flex:1; text-decoration:none; padding:10px;">
+        &#11015; Download Application
+      </a>
+      <button class="btn btn-secondary" onclick="closeCredentialsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRANSACTION HISTORY MODAL -->
+<div class="modal" id="tx-modal">
+  <div class="modal-content" style="max-width: 520px;">
+    <button class="modal-close" onclick="closeTxModal()">&times;</button>
+    <div class="modal-header">
+      <h3>Recharge Transactions Log</h3>
+      <p style="font-size: 12px; color: #94a3b8;">Your past Razorpay recharge history:</p>
+    </div>
+    <div id="tx-history-container" style="max-height: 280px; overflow-y: auto; margin-top: 14px;">
+      <p style="color: #94a3b8; font-size: 13px;">Loading transaction records...</p>
+    </div>
+  </div>
+</div>
+
+<!-- POLICY MODALS (ACCESSIBLE FROM 3-DOTS MENU) -->
+<!-- 1. About Us Modal -->
+<div class="modal" id="about-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closePolicyModal('about-modal')">&times;</button>
+    <h2>About Us</h2>
+    <p>We build specialized utility tools and optimization applications tailored for mobile users. Our goal is to provide reliable, high-performance features that help users maximize device efficiency, configure customization settings, and enjoy seamless digital experiences.</p>
+  </div>
+</div>
+
+<!-- 2. Terms & Conditions Modal -->
+<div class="modal" id="terms-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closePolicyModal('terms-modal')">&times;</button>
+    <h2>Terms &amp; Conditions</h2>
+    <p>By downloading, accessing, or making purchases through our platform, you agree to comply with the following terms:</p>
+    <ul>
+      <li>All users must provide accurate and lawful information during transactions.</li>
+      <li>Our tools and software may only be used for legitimate, authorized personal purposes. Any misuse, reverse engineering, or fraudulent activity is strictly prohibited.</li>
+      <li>Prices and digital feature sets are subject to update or modification without prior notice.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 3. Privacy Policy Modal -->
+<div class="modal" id="privacy-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closePolicyModal('privacy-modal')">&times;</button>
+    <h2>Privacy Policy</h2>
+    <p>We respect your privacy and handle data in compliance with standard security benchmarks:</p>
+    <ul>
+      <li><strong>Information Collection:</strong> We collect essential contact information solely to verify accounts and deliver service access.</li>
+      <li><strong>Payment Data:</strong> We do not store sensitive payment card, UPI, or banking credentials on our servers. All transactions are securely processed through Razorpay.</li>
+      <li><strong>Data Sharing:</strong> Your personal data is never sold, traded, or shared with third parties for unauthorized commercial purposes.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 4. Refund & Cancellation Policy Modal -->
+<div class="modal" id="refund-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closePolicyModal('refund-modal')">&times;</button>
+    <h2>Refund &amp; Cancellation Policy</h2>
+    <p>Our guidelines regarding cancellations and purchase refunds:</p>
+    <ul>
+      <li>Because our items are instant digital goods and virtual tools, purchases are generally final once the digital feature is unlocked.</li>
+      <li>If a payment is deducted without access being granted due to a network or technical failure, users should contact support within 48 hours. After verification, refunds are processed within 3–5 business days to the original payment source.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 5. Contact Support Modal -->
+<div class="modal" id="contact-modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closePolicyModal('contact-modal')">&times;</button>
+    <h2>Contact Us</h2>
+    <p>If you have any questions, technical inquiries, or need support regarding your purchases, feel free to reach out:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:jkoffline5@gmail.com" class="contact-link">jkoffline5@gmail.com</a></li>
+      <li><strong>Phone:</strong> <a href="tel:+917066493040" class="contact-link">+91 7066493040</a></li>
+      <li><strong>Support Availability:</strong> Monday – Saturday (10:00 AM – 8:00 PM IST)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION -->
+<div id="toast-notice">Notice message</div>
+
+<footer>
+  <p>&copy; 2026 AppStore Pro. All rights reserved.</p>
+</footer>
+
+<script>
+  const canvas = document.getElementById("particles-canvas");
+  const ctx = canvas.getContext("2d");
+  let w = (canvas.width = window.innerWidth), h = (canvas.height = window.innerHeight);
+  window.addEventListener("resize", () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
+  const pts = Array.from({ length: 30 }, () => ({
+    x: Math.random() * w, y: Math.random() * h,
+    vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, r: Math.random() * 2 + 1
+  }));
+  function draw() {
+    ctx.clearRect(0,0,w,h);
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = w; if (p.x > w) p.x = 0;
+      if (p.y < 0) p.y = h; if (p.y > h) p.y = 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = "rgba(56,189,248,0.35)"; ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyABnLn1KdaNWLWzQQxx9AuJnG9IA3UUM5k",
+    authDomain: "server-checker-e53ce.firebaseapp.com",
+    databaseURL: "https://server-checker-e53ce-default-rtdb.firebaseio.com",
+    projectId: "server-checker-e53ce",
+    storageBucket: "server-checker-e53ce.firebasestorage.app",
+    messagingSenderId: "784699831823",
+    appId: "1:784699831823:web:f6f0d09103f407d52bd57a"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  const RAZORPAY_KEY_ID = "rzp_live_XXXXXXXXXXXXXX";
+
+  let currentUser = null;
+  let currentBalance = 0;
+  let activeModalExpiry = null;
+
+  let activeBuyingAppId = null;
+  let activeBuyingAppName = null;
+  let activeSelectedPlanKey = null;
+  let activeSelectedPlanPrice = 0;
+
+  // Custom Glassmorphic Alert System
+  function showCustomAlert(title, message, iconType = "info") {
+    document.getElementById("alert-title").innerText = title;
+    document.getElementById("alert-message").innerText = message;
+    
+    let icon = "ℹ️";
+    if (iconType === "error") icon = "⚠️";
+    else if (iconType === "success") icon = "✅";
+    document.getElementById("alert-icon").innerText = icon;
+
+    document.getElementById("custom-alert-modal").style.display = "flex";
+  }
+
+  function closeCustomAlert() {
+    document.getElementById("custom-alert-modal").style.display = "none";
+  }
+
+  // Sanitize all errors: Users will NEVER see "Firebase" or technical codes!
+  function getFriendlyErrorMessage(error) {
+    if (!error) return "An unexpected error occurred. Please try again.";
+    const code = error.code || "";
+    const msg = error.message || "";
+
+    if (code.includes("email-already-in-use")) {
+      return "This email address is already registered. Please login with your password.";
+    } else if (code.includes("user-not-found") || code.includes("wrong-password") || code.includes("invalid-credential")) {
+      return "Invalid email address or password. Please verify and try again.";
+    } else if (code.includes("weak-password")) {
+      return "Password should be at least 6 characters long.";
+    } else if (code.includes("invalid-email")) {
+      return "Please enter a valid email address.";
+    } else if (code.includes("network-request-failed") || msg.toLowerCase().includes("network")) {
+      return "Network connection issue detected. Please check your internet connection.";
+    } else if (code.includes("too-many-requests")) {
+      return "Too many unsuccessful attempts. Please wait a few minutes and try again.";
+    }
+    return "Could not process request at this moment. Please try again later.";
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast-notice");
+    t.innerText = msg;
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 3500);
+  }
+
+  function toggleDropdownMenu() {
+    const menu = document.getElementById("dropdown-menu");
+    menu.style.display = (menu.style.display === "block") ? "none" : "block";
+  }
+
+  window.addEventListener("click", (e) => {
+    if (!e.target.closest(".menu-wrapper")) {
+      document.getElementById("dropdown-menu").style.display = "none";
+    }
+  });
+
+  function scrollToSection(id) {
+    document.getElementById("dropdown-menu").style.display = "none";
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function openPolicyModal(modalId) {
+    document.getElementById("dropdown-menu").style.display = "none";
+    document.getElementById(modalId).style.display = "flex";
+  }
+
+  function closePolicyModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  }
+
+  function showLoginView() {
+    document.getElementById("register-box").style.display = "none";
+    document.getElementById("login-box").style.display = "block";
+  }
+
+  function showRegisterView() {
+    document.getElementById("register-box").style.display = "block";
+    document.getElementById("login-box").style.display = "none";
+  }
+
+  // 1. User Registration
+  function handleRegister() {
+    const name = document.getElementById("reg-name").value.trim();
+    const email = document.getElementById("reg-email").value.trim();
+    const pass = document.getElementById("reg-pass").value.trim();
+
+    if (!name || !email || !pass) {
+      return showCustomAlert("Missing Fields", "Please complete all registration fields!", "error");
+    }
+
+    auth.createUserWithEmailAndPassword(email, pass).then(res => {
+      db.ref("users/" + res.user.uid).set({
+        name: name,
+        email: email,
+        wallet: 0,
+        createdAt: Date.now()
+      }).then(() => {
+        auth.signOut().then(() => {
+          showCustomAlert("Account Created", "Registration completed successfully! Please sign in.", "success");
+          document.getElementById("login-email").value = email;
+          showLoginView();
+        });
+      });
+    }).catch(err => {
+      showCustomAlert("Registration Error", getFriendlyErrorMessage(err), "error");
+    });
+  }
+
+  // 2. User Login
+  function handleLogin() {
+    const email = document.getElementById("login-email").value.trim();
+    const pass = document.getElementById("login-pass").value.trim();
+
+    if (!email || !pass) {
+      return showCustomAlert("Missing Fields", "Please enter both email and password.", "error");
+    }
+
+    auth.signInWithEmailAndPassword(email, pass).catch(err => {
+      showCustomAlert("Login Failed", getFriendlyErrorMessage(err), "error");
+    });
+  }
+
+  function logoutUser() {
+    auth.signOut().then(() => location.reload());
+  }
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      currentUser = user;
+      document.getElementById("auth-card").style.display = "none";
+      document.getElementById("dashboard-view").style.display = "block";
+      document.getElementById("user-menu-wrapper").style.display = "block";
+      document.getElementById("menu-user-email").innerText = user.email;
+
+      db.ref("users/" + user.uid).on("value", snap => {
+        const u = snap.val();
+        if (u) {
+          currentBalance = Number(u.wallet || 0);
+          document.getElementById("menu-wallet-balance").innerText = "₹" + currentBalance.toFixed(2);
+        }
+      });
+
+      listenApps();
+      listenPurchases(user.uid);
+    } else {
+      currentUser = null;
+      document.getElementById("auth-card").style.display = "block";
+      document.getElementById("dashboard-view").style.display = "none";
+      document.getElementById("user-menu-wrapper").style.display = "none";
+    }
+  });
+
+  function listenApps() {
+    db.ref("applications").on("value", snap => {
+      const container = document.getElementById("apps-container");
+      container.innerHTML = "";
+      const apps = snap.val();
+
+      if (!apps) {
+        container.innerHTML = "<p style='color: #94a3b8;'>No applications available at this time.</p>";
+        return;
+      }
+
+      Object.keys(apps).forEach(appId => {
+        const app = apps[appId];
+        const card = document.createElement("div");
+        card.className = "app-card";
+        const iconSrc = app.icon || "https://cdn-icons-png.flaticon.com/512/1006/1006771.png";
+
+        const stockItems = app.stocks ? Object.keys(app.stocks) : [];
+        const isOutOfStock = stockItems.length === 0;
+
+        card.innerHTML = `
+          <div>
+            <div class="app-icon-box">
+              <img src="${iconSrc}" alt="${app.title}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1006/1006771.png'"/>
+            </div>
+            <div class="app-title">${app.title}</div>
+            <span class="status-badge ${isOutOfStock ? 'status-out' : 'status-available'}">
+              ${isOutOfStock ? '&#9888; Out of Stock' : '&#10004; In Stock'}
+            </span>
+            <div class="app-desc">${app.description || "Premium software package with unique credentials."}</div>
+          </div>
+          <div class="app-footer">
+            <div class="app-price">&#8377;${app.price || '49'}+</div>
+            <button class="btn ${isOutOfStock ? 'btn-secondary' : 'btn-primary'}" 
+              ${isOutOfStock ? 'disabled' : ''} 
+              onclick="initiateAppPlanBuy('${appId}', '${escape(app.title)}')">
+              ${isOutOfStock ? 'Out of Stock' : 'Buy Now'}
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    });
+  }
+
+  // STEP 1: User clicks "Buy Now" -> Suggests Duration Plans & Prices Modal!
+  function initiateAppPlanBuy(appId, appTitle) {
+    appTitle = unescape(appTitle);
+    activeBuyingAppId = appId;
+    activeBuyingAppName = appTitle;
+    activeSelectedPlanKey = null;
+    activeSelectedPlanPrice = 0;
+
+    document.getElementById("plan-app-title").innerText = `${appTitle} - Select Plan`;
+    const container = document.getElementById("plan-list-container");
+    container.innerHTML = "<p style='color:#94a3b8; font-size:13px;'>Fetching plans and prices...</p>";
+
+    db.ref("applications/" + appId).once("value").then(snap => {
+      const app = snap.val();
+      if (!app || !app.stocks) {
+        return showCustomAlert("Out of Stock", "Sorry, this application is currently out of stock!", "error");
+      }
+
+      const stockKeys = Object.keys(app.stocks);
+      if (stockKeys.length === 0) {
+        return showCustomAlert("Out of Stock", "Sorry, this application is out of stock!", "error");
+      }
+
+      const plansMap = {};
+      stockKeys.forEach(k => {
+        const item = app.stocks[k];
+        const label = item.durationLabel || "1 Day";
+        const price = Number(item.planPrice || app.price || 49);
+
+        if (!plansMap[label]) {
+          plansMap[label] = {
+            label: label,
+            price: price,
+            sampleKey: k,
+            durationMinutes: item.durationMinutes || (24 * 60)
+          };
+        }
+      });
+
+      container.innerHTML = "";
+      const planKeys = Object.keys(plansMap);
+
+      planKeys.forEach((label, idx) => {
+        const plan = plansMap[label];
+        const div = document.createElement("div");
+        div.className = `plan-card ${idx === 0 ? 'selected' : ''}`;
+        div.onclick = () => selectPlanOption(div, plan.label, plan.price, plan.sampleKey);
+
+        div.innerHTML = `
+          <div>
+            <div class="plan-duration">&#9201; ${plan.label} Access</div>
+            <div style="font-size: 11px; color: #94a3b8;">Instant digital credential activation</div>
+          </div>
+          <div class="plan-price-tag">&#8377;${plan.price}</div>
+        `;
+        container.appendChild(div);
+
+        if (idx === 0) {
+          activeSelectedPlanKey = plan.label;
+          activeSelectedPlanPrice = plan.price;
+          document.getElementById("plan-selected-price").innerText = "₹" + plan.price;
+        }
+      });
+
+      document.getElementById("plan-selection-modal").style.display = "flex";
+    });
+  }
+
+  function selectPlanOption(cardElem, label, price, sampleKey) {
+    document.querySelectorAll(".plan-card").forEach(c => c.classList.remove("selected"));
+    cardElem.classList.add("selected");
+    activeSelectedPlanKey = label;
+    activeSelectedPlanPrice = price;
+    document.getElementById("plan-selected-price").innerText = "₹" + price;
+  }
+
+  function closePlanModal() {
+    document.getElementById("plan-selection-modal").style.display = "none";
+  }
+
+  function openInsufficientModal(curBal, planPrice) {
+    document.getElementById("insufficient-wallet-val").innerText = "₹" + curBal.toFixed(2);
+    document.getElementById("insufficient-plan-val").innerText = "₹" + planPrice.toFixed(2);
+    const needed = planPrice - curBal;
+    document.getElementById("insufficient-needed-val").innerText = "₹" + (needed > 0 ? needed.toFixed(2) : "0.00");
+
+    document.getElementById("insufficient-balance-modal").style.display = "flex";
+  }
+
+  function closeInsufficientModal() {
+    document.getElementById("insufficient-balance-modal").style.display = "none";
+  }
+
+  function goToRechargeFromInsufficient() {
+    closeInsufficientModal();
+    openRechargeModal();
+  }
+
+  function confirmPlanPurchase() {
+    if (!activeSelectedPlanKey || !activeSelectedPlanPrice) {
+      return showCustomAlert("Plan Selection", "Please select a duration plan to continue.", "error");
+    }
+
+    if (currentBalance < activeSelectedPlanPrice) {
+      closePlanModal();
+      openInsufficientModal(currentBalance, activeSelectedPlanPrice);
+      return;
+    }
+
+    db.ref("applications/" + activeBuyingAppId).once("value").then(snap => {
+      const app = snap.val();
+      if (!app || !app.stocks) {
+        closePlanModal();
+        return showCustomAlert("Out of Stock", "Stock has run out for this item!", "error");
+      }
+
+      const stockKeys = Object.keys(app.stocks);
+      let matchedStockKey = null;
+
+      for (let k of stockKeys) {
+        const item = app.stocks[k];
+        const itemLabel = item.durationLabel || "1 Day";
+        if (itemLabel === activeSelectedPlanKey) {
+          matchedStockKey = k;
+          break;
+        }
+      }
+
+      if (!matchedStockKey && stockKeys.length > 0) {
+        matchedStockKey = stockKeys[0];
+      }
+
+      if (!matchedStockKey) {
+        closePlanModal();
+        return showCustomAlert("Out of Stock", "This plan duration is out of stock!", "error");
+      }
+
+      const assignedStock = app.stocks[matchedStockKey];
+      const newBal = currentBalance - activeSelectedPlanPrice;
+
+      const durationMinutes = assignedStock.durationMinutes || (24 * 60);
+      const durationLabel = assignedStock.durationLabel || activeSelectedPlanKey;
+      const expiryTimestamp = Date.now() + (durationMinutes * 60 * 1000);
+      const credType = assignedStock.credType || "both";
+
+      db.ref("users/" + currentUser.uid).update({ wallet: newBal }).then(() => {
+        db.ref(`applications/${activeBuyingAppId}/stocks/${matchedStockKey}`).remove().then(() => {
+          if (stockKeys.length - 1 === 0) {
+            db.ref("admin_alerts").push({
+              appId: activeBuyingAppId,
+              appTitle: app.title,
+              message: `URGENT: Stock finished for "${app.title}"! Please add new stock immediately.`,
+              timestamp: Date.now(),
+              status: "UNREAD"
+            });
+          }
+
+          const downloadLink = app.downloadUrl || "#";
+
+          db.ref(`purchases/${currentUser.uid}/${activeBuyingAppId}_${Date.now()}`).set({
+            appId: activeBuyingAppId,
+            title: app.title,
+            targetKey: app.targetKey || "DEFAULT",
+            price: activeSelectedPlanPrice,
+            downloadUrl: downloadLink,
+            credType: credType,
+            username: assignedStock.username || "",
+            password: assignedStock.password || "",
+            durationMinutes: durationMinutes,
+            durationLabel: durationLabel,
+            expiryTimestamp: expiryTimestamp,
+            purchasedAt: Date.now()
+          });
+
+          db.ref("sales").push({
+            buyerId: currentUser.uid,
+            buyerEmail: currentUser.email,
+            appTitle: app.title,
+            targetKey: app.targetKey || "DEFAULT",
+            price: activeSelectedPlanPrice,
+            assignedUser: assignedStock.username || "",
+            assignedPass: assignedStock.password || "",
+            durationLabel: durationLabel,
+            timestamp: Date.now()
+          });
+
+          closePlanModal();
+          openCredentialsModal(app.title, assignedStock.username, assignedStock.password, downloadLink, expiryTimestamp, durationLabel, credType);
+          showToast(`Purchase successful! ${durationLabel} plan activated.`);
+        });
+      });
+    });
+  }
+
+  function listenPurchases(uid) {
+    db.ref("purchases/" + uid).on("value", snap => {
+      const container = document.getElementById("purchased-container");
+      const list = snap.val();
+
+      if (!list) {
+        container.innerHTML = "<p style='color: #94a3b8; font-size: 13px;'>You have not purchased any applications yet.</p>";
+        return;
+      }
+
+      container.innerHTML = "";
+      Object.keys(list).forEach(id => {
+        const p = list[id];
+        const isExpired = p.expiryTimestamp && Date.now() > p.expiryTimestamp;
+
+        let credSummary = "";
+        if (p.credType === "password_only") {
+          credSummary = `Key: <code style="color:#38bdf8;">••••••••</code>`;
+        } else if (p.credType === "username_only") {
+          credSummary = `User: <code style="color:#38bdf8;">${p.username}</code>`;
+        } else {
+          credSummary = `User: <code style="color:#38bdf8;">${p.username}</code> &bull; Password: <code style="color:#38bdf8;">••••••••</code>`;
+        }
+
+        const div = document.createElement("div");
+        div.className = `purchased-item ${isExpired ? 'expired-card' : ''}`;
+        div.id = `purchase-row-${id}`;
+
+        div.innerHTML = `
+          <div class="purchased-header">
+            <div>
+              <strong style="color:#f8fafc; font-size: 16px;">${p.title}</strong>
+              <span style="font-size:12px; color:${isExpired ? '#f87171' : '#10b981'}; margin-left:8px;">
+                ${isExpired ? '&#9888; Expired' : '&#10004; Active'}
+              </span>
+              <div class="timer-badge ${isExpired ? 'expired' : ''}" id="timer-${id}">
+                ${formatCountdown(p.expiryTimestamp, p.durationLabel)}
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-primary" style="padding:6px 12px; font-size:12px;" 
+                onclick="openCredentialsModal('${escape(p.title)}', '${escape(p.username || '')}', '${escape(p.password || '')}', '${escape(p.downloadUrl)}', ${p.expiryTimestamp || 0}, '${escape(p.durationLabel || '')}', '${p.credType || 'both'}')">
+                &#128273; View Credentials / Key
+              </button>
+              <a href="${p.downloadUrl}" target="_blank" class="btn btn-success" style="text-decoration:none; padding:6px 12px; font-size:12px;">Download</a>
+            </div>
+          </div>
+          <div style="font-size:12px; color:#94a3b8;">
+            ${credSummary} &bull; 
+            Plan: <span style="color:#fbbf24; font-weight:600;">${p.durationLabel || 'Standard'} (Paid: &#8377;${p.price || 0})</span>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    });
+  }
+
+  function formatCountdown(expiryTimestamp, label) {
+    if (!expiryTimestamp) return `Plan: ${label || 'Permanent'}`;
+    const diff = expiryTimestamp - Date.now();
+    if (diff <= 0) return "Expired (Access Locked)";
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+    if (d > 0) return `&#9203; Remaining: ${d}d ${h}h ${m}m ${s}s (${label || ''})`;
+    if (h > 0) return `&#9203; Remaining: ${h}h ${m}m ${s}s (${label || ''})`;
+    return `&#9203; Remaining: ${m}m ${s}s (${label || ''})`;
+  }
+
+  setInterval(() => {
+    document.querySelectorAll('[id^="timer-"]').forEach(el => {
+      const pid = el.id.replace("timer-", "");
+      if (currentUser) {
+        db.ref(`purchases/${currentUser.uid}/${pid}`).once("value").then(snap => {
+          const item = snap.val();
+          if (item) {
+            el.innerHTML = formatCountdown(item.expiryTimestamp, item.durationLabel);
+            if (item.expiryTimestamp && Date.now() > item.expiryTimestamp) {
+              el.classList.add("expired");
+            }
+          }
+        });
+      }
+    });
+
+    if (activeModalExpiry) {
+      const badge = document.getElementById("modal-timer-badge");
+      if (badge) {
+        badge.innerHTML = formatCountdown(activeModalExpiry, "");
+        if (Date.now() > activeModalExpiry) {
+          badge.classList.add("expired");
+          document.getElementById("modal-app-password").innerText = "EXPIRED - ACCESS LOCKED";
+          document.getElementById("btn-copy-pass").disabled = true;
+        }
+      }
+    }
+  }, 1000);
+
+  function openCredentialsModal(title, username, password, downloadUrl, expiryTimestamp, durationLabel, credType) {
+    title = unescape(title);
+    username = unescape(username);
+    password = unescape(password);
+    downloadUrl = unescape(downloadUrl);
+    durationLabel = unescape(durationLabel);
+
+    activeModalExpiry = expiryTimestamp || null;
+
+    document.getElementById("modal-app-title").innerText = title;
+    document.getElementById("modal-app-download").href = downloadUrl;
+
+    const userRow = document.getElementById("modal-user-row");
+    const passRow = document.getElementById("modal-pass-row");
+
+    if (credType === "password_only") {
+      userRow.style.display = "none";
+      passRow.style.display = "flex";
+      document.getElementById("modal-app-password").innerText = password;
+    } else if (credType === "username_only") {
+      userRow.style.display = "flex";
+      passRow.style.display = "none";
+      document.getElementById("modal-app-username").innerText = username;
+    } else {
+      userRow.style.display = "flex";
+      passRow.style.display = "flex";
+      document.getElementById("modal-app-username").innerText = username;
+      document.getElementById("modal-app-password").innerText = password;
+    }
+
+    const isExpired = expiryTimestamp && Date.now() > expiryTimestamp;
+    const badge = document.getElementById("modal-timer-badge");
+
+    if (isExpired) {
+      badge.classList.add("expired");
+      badge.innerHTML = "Expired (Access Locked)";
+      document.getElementById("modal-app-password").innerText = "EXPIRED - ACCESS LOCKED";
+      document.getElementById("btn-copy-pass").disabled = true;
+    } else {
+      badge.classList.remove("expired");
+      badge.innerHTML = formatCountdown(expiryTimestamp, durationLabel);
+      document.getElementById("btn-copy-pass").disabled = false;
+    }
+
+    document.getElementById("credentials-modal").style.display = "flex";
+  }
+
+  function closeCredentialsModal() {
+    activeModalExpiry = null;
+    document.getElementById("credentials-modal").style.display = "none";
+  }
+
+  function copyModalField(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    if (text.includes("EXPIRED")) {
+      return showCustomAlert("Expired", "This credential has expired!", "error");
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      showToast("Copied to clipboard!");
+    });
+  }
+
+  function openRechargeModal() {
+    document.getElementById("dropdown-menu").style.display = "none";
+    document.getElementById("recharge-modal").style.display = "flex";
+  }
+  function closeRechargeModal() { document.getElementById("recharge-modal").style.display = "none"; }
+  function setRechargeAmt(amt) { document.getElementById("recharge-amt-input").value = amt; }
+
+  function openTransactionModal() {
+    document.getElementById("dropdown-menu").style.display = "none";
+    document.getElementById("tx-modal").style.display = "flex";
+
+    db.ref("transactions").orderByChild("userId").equalTo(currentUser.uid).once("value", snap => {
+      const container = document.getElementById("tx-history-container");
+      container.innerHTML = "";
+      const data = snap.val();
+
+      if (!data) {
+        container.innerHTML = "<p style='color:#94a3b8; font-size:13px;'>No recharges recorded yet.</p>";
+        return;
+      }
+
+      Object.keys(data).forEach(k => {
+        const item = data[k];
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : "N/A";
+        const row = document.createElement("div");
+        row.style.cssText = "background:rgba(30,41,59,0.5); padding:10px 12px; border-radius:8px; margin-bottom:8px; font-size:13px; display:flex; justify-content:space-between; align-items:center;";
+        row.innerHTML = `
+          <div>
+            <div style="font-weight:600; color:#e2e8f0;">&#8377;${item.amount} Recharge</div>
+            <div style="font-size:11px; color:#94a3b8;">${dateStr}</div>
+          </div>
+          <span style="color:#34d399; font-size:12px; font-weight:600;">SUCCESS</span>
+        `;
+        container.prepend(row);
+      });
+    });
+  }
+  function closeTxModal() { document.getElementById("tx-modal").style.display = "none"; }
+
+  function startRazorpayPayment() {
+    const amt = Number(document.getElementById("recharge-amt-input").value);
+    if (!amt || amt <= 0) {
+      return showCustomAlert("Invalid Amount", "Please enter a valid recharge amount!", "error");
+    }
+
+    const options = {
+      key: RAZORPAY_KEY_ID,
+      amount: amt * 100,
+      currency: "INR",
+      name: "AppStore Pro Wallet",
+      description: "Auto Wallet Recharge",
+      prefill: {
+        email: currentUser.email,
+        contact: "+917066493040"
+      },
+      theme: { color: "#0284c7" },
+      handler: function(response) {
+        const paymentId = response.razorpay_payment_id;
+        const newBal = currentBalance + amt;
+
+        db.ref("users/" + currentUser.uid).update({
+          wallet: newBal,
+          lastPaymentId: paymentId,
+          lastRecharge: Date.now()
+        }).then(() => {
+          db.ref("transactions").push({
+            paymentId: paymentId,
+            userId: currentUser.uid,
+            userEmail: currentUser.email,
+            amount: amt,
+            status: "SUCCESS",
+            timestamp: Date.now()
+          });
+
+          closeRechargeModal();
+          showToast(`Wallet Recharged! ₹${amt} added successfully.`);
+        });
+      }
+    };
+
+    new Razorpay(options).open();
+  }
+</script>
+
+</body>
+</html>
